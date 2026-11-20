@@ -1,0 +1,59 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "1 Open private MySQL Jenkins",
+      "type": "shell",
+      "command": "aws ssm start-session --region ${input:awsRegion} --target ${input:jenkinsInstanceId} --document-name AWS-StartPortForwardingSession --parameters '{\"portNumber\":[\"8080\"],\"localPortNumber\":[\"18088\"]}'",
+      "problemMatcher": []
+    },
+    {
+      "label": "2 Open private RDS MySQL tunnel",
+      "type": "shell",
+      "command": "aws ssm start-session --region ${input:awsRegion} --target ${input:jenkinsInstanceId} --document-name AWS-StartPortForwardingSessionToRemoteHost --parameters '{\"host\":[\"${input:dbEndpoint}\"],\"portNumber\":[\"3306\"],\"localPortNumber\":[\"13306\"]}'",
+      "problemMatcher": []
+    },
+    {
+      "label": "3 Launch local NSRL MySQL Query GUI",
+      "type": "shell",
+      "command": "DB_HOST=127.0.0.1 DB_PORT=13306 DB_NAME=${input:dbName} DB_SECRET_ARN=${input:dbSecretArn} AWS_REGION=${input:awsRegion} RDS_CA_BUNDLE=.lab/global-bundle.pem python3 app/nsrl_gui.py",
+      "problemMatcher": []
+    },
+    {
+      "label": "4 Run unit tests",
+      "type": "shell",
+      "command": "python3 -m unittest discover -s tests -v",
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "jenkinsInstanceId",
+      "type": "promptString",
+      "description": "JenkinsInstanceId from the jenkins-host CloudFormation Outputs"
+    },
+    {
+      "id": "awsRegion",
+      "type": "pickString",
+      "description": "AWS Academy Learner Lab region",
+      "options": ["us-east-1", "us-west-2"],
+      "default": "us-east-1"
+    },
+    {
+      "id": "dbEndpoint",
+      "type": "promptString",
+      "description": "DBEndpoint from the mysql-rds CloudFormation Outputs"
+    },
+    {
+      "id": "dbName",
+      "type": "promptString",
+      "description": "MySQL database name (e.g., jj_nsrl)",
+      "default": "jj_nsrl"
+    },
+    {
+      "id": "dbSecretArn",
+      "type": "promptString",
+      "description": "AdminSecretArn from the mysql-rds CloudFormation Outputs"
+    }
+  ]
+}

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NSRL MySQL Query System — CSCI 6441</title>
+  <style>
+    :root { --bg:#f8fafc; --card:#ffffff; --border:#e2e8f0; --text:#0f172a; --muted:#64748b; --accent:#2563eb; --green:#15803d; --green-bg:#dcfce7; }
+    * { box-sizing:border-box; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
+    body { margin:0; background:var(--bg); color:var(--text); }
+    .wrap { max-width:1180px; margin:0 auto; padding:28px 24px 48px; }
+    .topbar { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:22px; }
+    .eyebrow { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:6px; }
+    h1 { margin:0; font-size:28px; letter-spacing:-.02em; }
+    .sub { color:var(--muted); margin-top:4px; font-size:14px; }
+    .pill { display:inline-flex; align-items:center; gap:8px; padding:7px 14px; border-radius:999px; background:var(--green-bg); color:var(--green); font-size:13px; font-weight:600; border:1px solid #bbf7d0; }
+    .dot { width:8px; height:8px; border-radius:50%; background:var(--green); }
+    .cards { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px; }
+    .card-label { font-size:12px; color:var(--muted); margin-bottom:6px; }
+    .card-value { font-size:22px; font-weight:700; }
+    .card-sub { font-size:12px; color:var(--muted); margin-top:4px; word-break:break-all; }
+    .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:20px; }
+    .panel h2 { margin:0 0 14px; font-size:17px; }
+    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    label { display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px; }
+    input { width:100%; padding:9px 11px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; align-items:center; }
+    button { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:9px 16px; font-size:13px; font-weight:600; cursor:pointer; }
+    button.secondary { background:#f1f5f9; color:var(--text); border:1px solid #cbd5e1; }
+    .sql-box { margin-top:14px; background:#0f172a; color:#e2e8f0; border-radius:8px; padding:10px 14px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { text-align:left; padding:10px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
+    th { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); background:#f8fafc; }
+    .mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; color:#334155; }
+    .summary { font-size:13px; color:var(--muted); margin-bottom:10px; display:flex; justify-content:space-between; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <div class="eyebrow">CSCI 6441 · DATABASE MANAGEMENT SYSTEMS II · AMAZON RDS MYSQL 8.4</div>
+        <h1>NSRL MySQL Query System</h1>
+        <div class="sub">Interactive browser GUI querying NIST NSRL records over TLS/SSL via AWS Secrets Manager</div>
+      </div>
+      <div class="pill" id="healthPill"><span class="dot"></span><span id="healthText">Connecting…</span></div>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-label">NSRL File Records</div>
+        <div class="card-value" id="statFiles">—</div>
+        <div class="card-sub" id="statPkg">Loading tables…</div>
+      </div>
+      <div class="card">
+        <div class="card-label">MySQL Engine &amp; Database</div>
+        <div class="card-value" id="statDb">—</div>
+        <div class="card-sub" id="statVer">—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">SSL / TLS Encryption</div>
+        <div class="card-value" id="statTls">—</div>
+        <div class="card-sub" id="statCipher">—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">CI/CD Release Provenance</div>
+        <div class="card-value" id="statCommit">—</div>
+        <div class="card-sub" id="statBucket">—</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Search NSRL Database</h2>
+      <div class="grid">
+        <div>
+          <label for="hash">MD5 / SHA-1 / SHA-256 Hash</label>
+          <input id="hash" placeholder="e.g. 51580C2AEA9DE8E933C858A34502F78D" />
+        </div>
+        <div>
+          <label for="file_name">File Name Contains</label>
+          <input id="file_name" placeholder="e.g. .mum or Netlogon" />
+        </div>
+        <div>
+          <label for="package_name">Package Name Contains</label>
+          <input id="package_name" placeholder="e.g. Windows Server or openSUSE" />
+        </div>
+        <div>
+          <label for="os_name">Operating System</label>
+          <input id="os_name" placeholder="e.g. Windows or Linux" />
+        </div>
+        <div>
+          <label for="manufacturer">Manufacturer</label>
+          <input id="manufacturer" placeholder="e.g. Microsoft or Novell" />
+        </div>
+        <div>
+          <label for="min_size">Minimum File Size (bytes)</label>
+          <input id="min_size" placeholder="e.g. 1000000" />
+        </div>
+      </div>
+      <div class="actions">
+        <button onclick="runSearch()">Run MySQL Query</button>
+        <button class="secondary" onclick="presetMd5()">Sample MD5 Lookup</button>
+        <button class="secondary" onclick="presetMum()">Sample .mum Files</button>
+        <button class="secondary" onclick="presetLarge()">Files &ge; 1 MB</button>
+        <button class="secondary" onclick="clearFilters()">Clear</button>
+      </div>
+      <div class="sql-box" id="sqlPreview">SELECT ... FROM nsrl_file_details ORDER BY file_size DESC LIMIT 25</div>
+    </div>
+
+    <div class="panel">
+      <div class="summary">
+        <strong id="resultTitle">Query Results</strong>
+        <span id="resultCount">—</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>File Name</th>
+            <th>Size (Bytes)</th>
+            <th>MD5 / SHA-256</th>
+            <th>Package</th>
+            <th>OS / Manufacturer</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody">
+          <tr><td colspan="5">Loading NSRL records…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+    async function loadStats() {
+      const res = await fetch('/api/stats');
+      const d = await res.json();
+      document.getElementById('statFiles').textContent = d.counts.files.toLocaleString();
+      document.getElementById('statPkg').textContent = `${d.counts.packages.toLocaleString()} pkgs · ${d.counts.operating_systems} OS · ${d.counts.manufacturers.toLocaleString()} mfgs`;
+      document.getElementById('statDb').textContent = d.database;
+      document.getElementById('statVer').textContent = `MySQL ${d.mysql_version}`;
+      document.getElementById('statTls').textContent = d.tls.Ssl_version || 'TLS Active';
+      document.getElementById('statCipher').textContent = d.tls.Ssl_cipher || '';
+      document.getElementById('statCommit').textContent = d.release ? d.release.source_commit.slice(0, 8) : 'local';
+      document.getElementById('statBucket').textContent = d.release ? d.release.s3_bucket : 'Local dataset';
+      document.getElementById('healthText').textContent = `Connected · ${d.tls.Ssl_version || 'SSL'}`;
+    }
+
+    async function runSearch() {
+      const qs = new URLSearchParams();
+      for (const id of ['hash', 'file_name', 'package_name', 'os_name', 'manufacturer', 'min_size']) {
+        const v = document.getElementById(id).value.trim();
+        if (v) qs.set(id, v);
+      }
+      qs.set('limit', '25');
+      const res = await fetch('/api/search?' + qs.toString());
+      const d = await res.json();
+      document.getElementById('sqlPreview').textContent = d.sql_preview;
+      document.getElementById('resultCount').textContent = `Showing ${d.returned} of ${d.total_matches.toLocaleString()} matching records`;
+      const tbody = document.getElementById('resultsBody');
+      if (!d.rows.length) {
+        tbody.innerHTML = '<tr><td colspan="5">No matching NSRL records found.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = d.rows.map(r => `
+        <tr>
+          <td><strong>${esc(r.file_name)}</strong></td>
+          <td>${Number(r.file_size).toLocaleString()}</td>
+          <td class="mono">MD5: ${esc(r.md5)}<br/>SHA256: ${esc(r.sha256.slice(0, 24))}…</td>
+          <td>${esc(r.package_name || '—')}<br/><span class="mono">ID ${r.package_id} · ${esc(r.package_version || '')}</span></td>
+          <td>${esc(r.os_name || '—')}<br/><span class="mono">${esc(r.manufacturer_name || '')}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function clearFilters() {
+      for (const id of ['hash', 'file_name', 'package_name', 'os_name', 'manufacturer', 'min_size']) document.getElementById(id).value = '';
+      runSearch();
+    }
+    function presetMd5() { clearOnly(); document.getElementById('hash').value = '51580C2AEA9DE8E933C858A34502F78D'; runSearch(); }
+    function presetMum() { clearOnly(); document.getElementById('file_name').value = '.mum'; runSearch(); }
+    function presetLarge() { clearOnly(); document.getElementById('min_size').value = '1000000'; runSearch(); }
+    function clearOnly() { for (const id of ['hash', 'file_name', 'package_name', 'os_name', 'manufacturer', 'min_size']) document.getElementById(id).value = ''; }
+
+    loadStats().then(runSearch);
+  </script>
+</body>
+</html>

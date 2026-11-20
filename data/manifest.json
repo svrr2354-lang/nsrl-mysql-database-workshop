@@ -1,0 +1,53 @@
+{
+  "source_file": "RDS_2022.10.1_modern_minimal.db",
+  "file_row_limit": 10000,
+  "tables": {
+    "file": {
+      "rows": 10000,
+      "columns": [
+        "sha256",
+        "sha1",
+        "md5",
+        "file_name",
+        "file_size",
+        "package_id"
+      ],
+      "sha256": "35071d1907631c69554ba52dd5c8906e4785c0f1e903f4147b4877d080f6bbb7",
+      "bytes": 1919491
+    },
+    "pkg": {
+      "rows": 85885,
+      "columns": [
+        "package_id",
+        "name",
+        "version",
+        "operating_system_id",
+        "manufacturer_id",
+        "language",
+        "application_type"
+      ],
+      "sha256": "478b2d17bee4048b2355cdf8a2002761a322041027eaec2f20bd010a9a16db40",
+      "bytes": 6169609
+    },
+    "os": {
+      "rows": 309,
+      "columns": [
+        "operating_system_id",
+        "name",
+        "version",
+        "manufacturer_id"
+      ],
+      "sha256": "1415e1915950935c39654af8691054241a25aa09f29f2c2a492054182c868171",
+      "bytes": 16061
+    },
+    "mfg": {
+      "rows": 2624,
+      "columns": [
+        "manufacturer_id",
+        "name"
+      ],
+      "sha256": "e2c739a60e2ae58245a40bfa72f7200b705a4480fd4b89b55c650e147fe46016",
+      "bytes": 69460
+    }
+  }
+}

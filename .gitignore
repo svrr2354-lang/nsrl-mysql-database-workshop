@@ -1,0 +1,7 @@
+artifacts/
+.lab/
+__pycache__/
+*.pyc
+.DS_Store
+*.env
+.lab_aws_credentials
